@@ -109,6 +109,25 @@ select { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 5px 8px; 
 .login-error { font-size: 12px; color: #B03A2E; margin-top: 8px; display: none; }
 .admin-logout { font-size: 12px; color: var(--text3); cursor: pointer; text-decoration: underline; margin-top: 10px; display: inline-block; }
 
+/* Formulario nuevo turno */
+.nuevo-turno-btn { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 12px; border-radius: 12px; border: 1.5px dashed var(--border2); background: transparent; color: var(--text2); cursor: pointer; margin-bottom: 12px; transition: all 0.15s; }
+.nuevo-turno-btn:hover { background: var(--bg2); color: var(--text); border-color: var(--text2); }
+.nuevo-turno-form { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+.form-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+.form-row { margin-bottom: 12px; }
+.form-label { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; display: block; }
+.form-select { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--border2); background: var(--bg); color: var(--text); cursor: pointer; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.form-check-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg); border-radius: 10px; margin-bottom: 12px; cursor: pointer; }
+.form-check-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+.form-check-label { font-size: 14px; color: var(--text); flex: 1; }
+.form-mant-extra { display: none; margin-bottom: 12px; }
+.form-save-btn { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 11px; border-radius: 10px; border: none; background: var(--text); color: var(--bg); cursor: pointer; transition: opacity 0.15s; }
+.form-save-btn:hover { opacity: 0.85; }
+.form-cancel { font-size: 12px; color: var(--text3); cursor: pointer; text-decoration: underline; }
+.form-error { font-size: 12px; color: #B03A2E; margin-top: 8px; display: none; }
+.turno-eliminar { font-size: 11px; color: #B03A2E; cursor: pointer; text-decoration: underline; margin-left: 8px; }
+
 @media (max-width: 480px) {
   .next-pair { grid-template-columns: 1fr; }
   .metrics { gap: 8px; }
@@ -143,7 +162,7 @@ select { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 5px 8px; 
 /* ══════════════════════════════════════════
    CONTRASEÑA ADMIN — cámbiala aquí
    ══════════════════════════════════════════ */
-const ADMIN_PASSWORD = "23689";
+const ADMIN_PASSWORD = "auditor2026";
 
 /* ══════════════════════════════════════════
    DATOS — edita aquí
@@ -181,6 +200,27 @@ const PROXIMAS_BASE = [
 /* ══════════════════════════════════════════
    ESTADO PERSISTENTE (localStorage)
    ══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   TURNOS EXTRA (guardados en localStorage)
+   ══════════════════════════════════════════ */
+function cargarTurnosExtra() {
+  try { return JSON.parse(localStorage.getItem('auditTurnosExtra') || '[]'); } catch(e) { return []; }
+}
+function guardarTurnosExtra(lista) {
+  localStorage.setItem('auditTurnosExtra', JSON.stringify(lista));
+}
+function getTodosProximas() {
+  const extra = cargarTurnosExtra();
+  return [...PROXIMAS_BASE, ...extra];
+}
+
+const MESES_CUBRE = {
+  'Marzo':      'Dic · Ene · Feb',
+  'Junio':      'Mar · Abr · May',
+  'Septiembre': 'Jun · Jul · Ago',
+  'Diciembre':  'Sep · Oct · Nov',
+};
+
 function cargarEstados() {
   try { return JSON.parse(localStorage.getItem('auditEstados') || '{}'); } catch(e) { return {}; }
 }
@@ -203,7 +243,7 @@ function guardarAsignacion(id, tipo, valor) {
 function getProximas() {
   const estados = cargarEstados();
   const asignaciones = cargarAsignaciones();
-  return PROXIMAS_BASE.map(p => {
+  return getTodosProximas().map(p => {
     const e = estados[p.id] || {};
     const a = asignaciones[p.id] || {};
     return {
@@ -441,19 +481,23 @@ function renderHistorial() {
 
 function renderAdmin() {
   const proximas = getProximas();
+  const optsAuditores = AUDITORES.map(a=>`<option value="${a}">${a}</option>`).join('');
+  const optsAnos = [2026,2027,2028,2029,2030].map(y=>`<option value="${y}">${y}</option>`).join('');
+
   document.getElementById('admin').innerHTML = `
     <div class="info-box">
       <strong>Panel de administrador</strong><br>
       Cambia el auditor asignado o marca el estado de cada auditoría. Los cambios se guardan automáticamente en este dispositivo.
     </div>
+
     ${proximas.map((t,i)=>`
       <div class="admin-block">
         <div class="admin-head">
           ${t.mes} ${t.year}
           <span class="admin-head-sub">· ${t.cubre}</span>
           <span class="badge badge-next">Próxima</span>
+          ${i >= PROXIMAS_BASE.length ? `<span class="turno-eliminar" onclick="eliminarTurno('${t.id}')">✕ Eliminar</span>` : ''}
         </div>
-
         <div class="admin-row">
           <span class="badge badge-cong admin-label">Congregación</span>
           ${avEl(t.cong.auditor, 30)}
@@ -465,7 +509,6 @@ function renderAdmin() {
             <option value="realizada" ${t.estadoCong==='realizada'?'selected':''}>✓ Realizada</option>
           </select>
         </div>
-
         ${t.tieneMant && t.mant ? `
         <div class="admin-row">
           <span class="badge badge-mant admin-label">Mantenimiento</span>
@@ -483,12 +526,121 @@ function renderAdmin() {
           No toca este turno
         </div>`}
       </div>`).join('')}
-    <p style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.5">
-      Los cambios de estado y auditor se guardan en este dispositivo. Para añadir turnos futuros, edita <code>PROXIMAS_BASE</code> en el archivo HTML.
+
+    <div id="form-nuevo" style="display:none" class="nuevo-turno-form">
+      <div class="form-title">
+        <span>➕ Nuevo turno de auditoría</span>
+        <span class="form-cancel" onclick="toggleFormNuevo(false)">Cancelar</span>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row" style="margin-bottom:0">
+          <label class="form-label">Mes</label>
+          <select class="form-select" id="nuevo-mes">
+            <option value="Marzo">Marzo</option>
+            <option value="Junio">Junio</option>
+            <option value="Septiembre">Septiembre</option>
+            <option value="Diciembre">Diciembre</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin-bottom:0">
+          <label class="form-label">Año</label>
+          <select class="form-select" id="nuevo-ano">${optsAnos}</select>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:12px">
+        <label class="form-label">Auditor de congregación</label>
+        <select class="form-select" id="nuevo-cong">${optsAuditores}</select>
+      </div>
+      <label class="form-check-row" onclick="toggleMantForm()">
+        <input type="checkbox" id="nuevo-tiene-mant">
+        <span class="form-check-label">¿Toca auditoría de mantenimiento este turno?</span>
+      </label>
+      <div class="form-mant-extra" id="form-mant-extra">
+        <label class="form-label">Auditor de mantenimiento</label>
+        <select class="form-select" id="nuevo-mant">${optsAuditores}</select>
+      </div>
+      <div class="form-error" id="form-error">Ya existe un turno para ese mes y año.</div>
+      <button class="form-save-btn" onclick="guardarNuevoTurno()">Guardar turno</button>
+    </div>
+
+    <button class="nuevo-turno-btn" id="btn-nuevo-turno" onclick="toggleFormNuevo(true)">
+      ➕ Añadir nuevo turno
+    </button>
+
+    <p style="font-size:12px;color:var(--text3);margin-top:4px;line-height:1.5">
+      Los cambios se guardan automáticamente en este dispositivo.
     </p>
     <div style="text-align:center;margin-top:16px">
       <span class="admin-logout" onclick="cerrarSesionAdmin()">🔒 Cerrar sesión de administrador</span>
     </div>`;
+}
+
+function toggleFormNuevo(mostrar) {
+  const form = document.getElementById('form-nuevo');
+  const btn = document.getElementById('btn-nuevo-turno');
+  if (!form || !btn) return;
+  form.style.display = mostrar ? 'block' : 'none';
+  btn.style.display = mostrar ? 'none' : 'block';
+  if (mostrar) {
+    const err = document.getElementById('form-error');
+    if (err) err.style.display = 'none';
+  }
+}
+
+function toggleMantForm() {
+  setTimeout(()=>{
+    const chk = document.getElementById('nuevo-tiene-mant');
+    const extra = document.getElementById('form-mant-extra');
+    if (chk && extra) extra.style.display = chk.checked ? 'block' : 'none';
+  }, 10);
+}
+
+function guardarNuevoTurno() {
+  const mes  = document.getElementById('nuevo-mes').value;
+  const ano  = parseInt(document.getElementById('nuevo-ano').value);
+  const cong = document.getElementById('nuevo-cong').value;
+  const tieneMant = document.getElementById('nuevo-tiene-mant').checked;
+  const mant = tieneMant ? document.getElementById('nuevo-mant').value : null;
+
+  const id = `${mes.toLowerCase()}-${ano}`;
+  const todos = getTodosProximas();
+  const err = document.getElementById('form-error');
+
+  // Comprobar duplicado
+  if (todos.find(t=>t.id===id)) {
+    if (err) err.style.display = 'block';
+    return;
+  }
+  if (err) err.style.display = 'none';
+
+  const cubre = MESES_CUBRE[mes] ? `${MESES_CUBRE[mes]} ${mes==='Marzo'?ano-1+'·':''} ${ano}`.trim() : '';
+  const nuevoTurno = {
+    id, mes, year: ano,
+    cubre: MESES_CUBRE[mes] ? `${MESES_CUBRE[mes]} ${ano}` : '',
+    cong: { auditor: cong },
+    mant: tieneMant ? { auditor: mant } : null,
+    tieneMant,
+  };
+
+  const extra = cargarTurnosExtra();
+  extra.push(nuevoTurno);
+  // Ordenar por año y mes
+  const ordenMes = ['Marzo','Junio','Septiembre','Diciembre'];
+  extra.sort((a,b)=> a.year !== b.year ? a.year - b.year : ordenMes.indexOf(a.mes) - ordenMes.indexOf(b.mes));
+  guardarTurnosExtra(extra);
+
+  renderAdmin();
+  renderInicio();
+}
+
+function eliminarTurno(id) {
+  const extra = cargarTurnosExtra().filter(t=>t.id!==id);
+  guardarTurnosExtra(extra);
+  // Limpiar estados y asignaciones de ese turno
+  const est = cargarEstados(); delete est[id]; localStorage.setItem('auditEstados', JSON.stringify(est));
+  const asi = cargarAsignaciones(); delete asi[id]; localStorage.setItem('auditAsignaciones', JSON.stringify(asi));
+  renderAdmin();
+  renderInicio();
 }
 
 function cambiarAuditor(id, tipo, valor) {
