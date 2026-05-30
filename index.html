@@ -96,6 +96,19 @@ select { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 5px 8px; 
 .info-box { background: var(--cong-bg); border: 1px solid rgba(26,58,143,0.15); border-radius: 12px; padding: 12px 14px; font-size: 12px; color: var(--cong-fg); margin-bottom: 12px; line-height: 1.5; }
 .nota-org { font-size: 11px; color: var(--text3); font-style: italic; margin-top: 2px; }
 
+/* Login Admin */
+.login-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+.login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 320px; text-align: center; }
+.login-icon { font-size: 32px; margin-bottom: 12px; }
+.login-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text); margin-bottom: 6px; }
+.login-sub { font-size: 13px; color: var(--text3); margin-bottom: 20px; }
+.login-input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border2); background: var(--bg); color: var(--text); margin-bottom: 12px; outline: none; text-align: center; letter-spacing: 0.1em; }
+.login-input:focus { border-color: var(--accent); }
+.login-btn { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px; border-radius: 10px; border: none; background: var(--text); color: var(--bg); cursor: pointer; transition: opacity 0.15s; }
+.login-btn:hover { opacity: 0.85; }
+.login-error { font-size: 12px; color: #B03A2E; margin-top: 8px; display: none; }
+.admin-logout { font-size: 12px; color: var(--text3); cursor: pointer; text-decoration: underline; margin-top: 10px; display: inline-block; }
+
 @media (max-width: 480px) {
   .next-pair { grid-template-columns: 1fr; }
   .metrics { gap: 8px; }
@@ -127,6 +140,11 @@ select { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 5px 8px; 
 </main>
 
 <script>
+/* ══════════════════════════════════════════
+   CONTRASEÑA ADMIN — cámbiala aquí
+   ══════════════════════════════════════════ */
+const ADMIN_PASSWORD = "auditor2026";
+
 /* ══════════════════════════════════════════
    DATOS — edita aquí
    ══════════════════════════════════════════ */
@@ -223,8 +241,44 @@ function estadoBadge(estado) {
 }
 
 /* ══════════════════════════════════════════
-   RENDERS
+   ACCESO ADMIN
    ══════════════════════════════════════════ */
+function adminAutenticado() {
+  return sessionStorage.getItem('adminOk') === '1';
+}
+function mostrarLogin() {
+  document.getElementById('admin').innerHTML = `
+    <div class="login-wrap">
+      <div class="login-box">
+        <div class="login-icon">🔒</div>
+        <div class="login-title">Área de administrador</div>
+        <div class="login-sub">Introduce la contraseña para continuar</div>
+        <input class="login-input" type="password" id="pwd-input" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter') verificarPassword()">
+        <button class="login-btn" onclick="verificarPassword()">Entrar</button>
+        <div class="login-error" id="pwd-error">Contraseña incorrecta</div>
+      </div>
+    </div>`;
+  setTimeout(()=>{ const el = document.getElementById('pwd-input'); if(el) el.focus(); }, 100);
+}
+function verificarPassword() {
+  const val = document.getElementById('pwd-input').value;
+  if (val === ADMIN_PASSWORD) {
+    sessionStorage.setItem('adminOk', '1');
+    renderAdmin();
+  } else {
+    const err = document.getElementById('pwd-error');
+    if (err) { err.style.display = 'block'; }
+    const inp = document.getElementById('pwd-input');
+    if (inp) { inp.value = ''; inp.focus(); }
+  }
+}
+function cerrarSesionAdmin() {
+  sessionStorage.removeItem('adminOk');
+  mostrarLogin();
+}
+
+
 function renderInicio() {
   const proximas = getProximas();
   const next = proximas[0];
@@ -431,7 +485,10 @@ function renderAdmin() {
       </div>`).join('')}
     <p style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.5">
       Los cambios de estado y auditor se guardan en este dispositivo. Para añadir turnos futuros, edita <code>PROXIMAS_BASE</code> en el archivo HTML.
-    </p>`;
+    </p>
+    <div style="text-align:center;margin-top:16px">
+      <span class="admin-logout" onclick="cerrarSesionAdmin()">🔒 Cerrar sesión de administrador</span>
+    </div>`;
 }
 
 function cambiarAuditor(id, tipo, valor) {
@@ -453,7 +510,7 @@ function showTab(tab, btn) {
   if (tab==='inicio') renderInicio();
   if (tab==='calendario') renderCalendario();
   if (tab==='historial') renderHistorial();
-  if (tab==='admin') renderAdmin();
+  if (tab==='admin') { adminAutenticado() ? renderAdmin() : mostrarLogin(); }
 }
 
 renderInicio();
