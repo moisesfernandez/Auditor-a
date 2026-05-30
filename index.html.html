@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditorías — Panel de Control</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F2EC; --bg2: #ECEAE3; --surface: #FFFFFF;
+  --text: #1A1814; --text2: #6B6760; --text3: #A8A5A0;
+  --border: rgba(26,24,20,0.1); --border2: rgba(26,24,20,0.18);
+  --cong-bg: #E8F0FF; --cong-fg: #1A3A8F;
+  --mant-bg: #FFF0E0; --mant-fg: #8F4A00;
+  --done-bg: #E6F5EC; --done-fg: #1A6B35;
+  --pend-bg: #FFF8E0; --pend-fg: #8F6A00;
+  --accent: #C8873A;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+
+.header { background: var(--text); color: var(--bg); padding: 18px 20px 16px; position: sticky; top: 0; z-index: 100; }
+.header-title { font-family: 'DM Serif Display', serif; font-size: 20px; letter-spacing: -0.3px; }
+.header-sub { font-size: 11px; color: rgba(245,242,236,0.45); margin-top: 1px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.nav { display: flex; gap: 4px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.nav-btn { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 6px 15px; border-radius: 40px; border: 1px solid transparent; background: transparent; color: var(--text2); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.nav-btn:hover { background: var(--bg); color: var(--text); }
+.nav-btn.active { background: var(--text); color: var(--bg); }
+
+.main { padding: 18px 14px; max-width: 680px; margin: 0 auto; }
+
+.metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 18px; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 13px; }
+.metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+.metric-value { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--text); line-height: 1; }
+.metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 15px; margin-bottom: 12px; }
+.card-title { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 13px; }
+
+.next-hero { background: var(--text); border-radius: 16px; padding: 18px; margin-bottom: 12px; color: var(--bg); }
+.next-hero .card-title { color: rgba(245,242,236,0.45); }
+.next-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+.next-item { background: rgba(255,255,255,0.08); border-radius: 12px; padding: 13px; }
+.next-item-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(245,242,236,0.45); margin-bottom: 7px; }
+.next-item-name { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--bg); line-height: 1.2; }
+.next-date { font-size: 11px; color: rgba(245,242,236,0.55); margin-top: 4px; }
+
+.av { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 500; flex-shrink: 0; }
+
+.badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.03em; white-space: nowrap; }
+.badge-cong { background: var(--cong-bg); color: var(--cong-fg); }
+.badge-mant { background: var(--mant-bg); color: var(--mant-fg); }
+.badge-done { background: var(--done-bg); color: var(--done-fg); }
+.badge-pend { background: var(--pend-bg); color: var(--pend-fg); }
+.badge-next { background: var(--accent); color: #fff; }
+.badge-gray { background: var(--bg2); color: var(--text2); }
+
+.turno { border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+.turno-head { padding: 9px 13px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.turno-head-left { flex: 1; }
+.turno-mes { font-size: 14px; font-weight: 500; color: var(--text); }
+.turno-cubre { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.turno-body { background: var(--surface); }
+.audit-row { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-bottom: 1px solid var(--border); }
+.audit-row:last-child { border-bottom: none; }
+.audit-info { flex: 1; }
+.audit-name { font-size: 14px; color: var(--text); }
+.audit-tipo { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+.hist-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.hist-row:last-child { border-bottom: none; }
+.hist-info { flex: 1; }
+.hist-name { font-size: 14px; color: var(--text); }
+.hist-date { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+.year-sep { font-family: 'DM Serif Display', serif; font-size: 16px; color: var(--text2); padding: 14px 0 8px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+
+/* Admin */
+.admin-block { border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+.admin-head { padding: 9px 13px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.admin-head-sub { font-size: 11px; font-weight: 400; color: var(--text3); }
+.admin-row { display: flex; align-items: center; gap: 10px; padding: 9px 13px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.admin-row:last-child { border-bottom: none; }
+.admin-label { font-size: 10px; font-weight: 500; min-width: 90px; text-align: center; }
+
+select { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg); color: var(--text); cursor: pointer; }
+.sel-auditor { flex: 1; max-width: 200px; }
+.sel-estado { width: 130px; }
+
+/* Estado toggle visual */
+.estado-realizada { border-left: 3px solid var(--done-fg) !important; }
+.estado-pendiente { border-left: 3px solid var(--pend-fg) !important; }
+
+.info-box { background: var(--cong-bg); border: 1px solid rgba(26,58,143,0.15); border-radius: 12px; padding: 12px 14px; font-size: 12px; color: var(--cong-fg); margin-bottom: 12px; line-height: 1.5; }
+.nota-org { font-size: 11px; color: var(--text3); font-style: italic; margin-top: 2px; }
+
+@media (max-width: 480px) {
+  .next-pair { grid-template-columns: 1fr; }
+  .metrics { gap: 8px; }
+  .metric-value { font-size: 22px; }
+  .sel-auditor { max-width: 140px; }
+  .sel-estado { width: 110px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Auditorías</div>
+  <div class="header-sub">Panel de control · Congregación</div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showTab('inicio',this)">Inicio</button>
+  <button class="nav-btn" onclick="showTab('calendario',this)">Calendario</button>
+  <button class="nav-btn" onclick="showTab('historial',this)">Historial</button>
+  <button class="nav-btn" onclick="showTab('admin',this)">Admin</button>
+</nav>
+
+<main class="main">
+  <div id="inicio" class="tab"></div>
+  <div id="calendario" class="tab" style="display:none"></div>
+  <div id="historial" class="tab" style="display:none"></div>
+  <div id="admin" class="tab" style="display:none"></div>
+</main>
+
+<script>
+/* ══════════════════════════════════════════
+   DATOS — edita aquí
+   ══════════════════════════════════════════ */
+const AUDITORES = [
+  'Israel Díaz','Christian Lozano','José María Menacho','Antonio Blasco',
+  'José Miguel Piedra','Mario Calvo','Melquisedec Cortés','Óliver Soria',
+  'Paco Arana','Samuel Pereira','Ximo Ramos','Alexei Bazhanova','Sergei Kudryavtsev'
+];
+
+const HISTORIAL_CONG = [
+  { mes:'Diciembre',  year:2024, cubre:'Sep · Oct · Nov 2024',      auditor:'Óliver Soria'        },
+  { mes:'Marzo',      year:2025, cubre:'Dic 2024 · Ene · Feb 2025', auditor:'Christian Lozano'    },
+  { mes:'Junio',      year:2025, cubre:'Mar · Abr · May 2025',      auditor:'Moisés Fernández', organizador:true },
+  { mes:'Septiembre', year:2025, cubre:'Jun · Jul · Ago 2025',      auditor:'Samuel Pereira'      },
+  { mes:'Diciembre',  year:2025, cubre:'Sep · Oct · Nov 2025',      auditor:'José Miguel Piedra'  },
+  { mes:'Marzo',      year:2026, cubre:'Dic 2025 · Ene · Feb 2026', auditor:'José María Menacho'  },
+];
+
+const HISTORIAL_MANT = [
+  { mes:'Diciembre', year:2025, cubre:'Sep · Oct · Nov 2025', auditor:'Melquisedec Cortés' },
+];
+
+// Próximas — el admin puede cambiar auditor y estado desde el panel
+const PROXIMAS_BASE = [
+  {
+    id:'junio-2026',
+    mes:'Junio', year:2026, cubre:'Mar · Abr · May 2026',
+    cong: { auditor:'Israel Díaz' },
+    mant: { auditor:'Mario Calvo' },
+    tieneMant: true
+  },
+];
+
+/* ══════════════════════════════════════════
+   ESTADO PERSISTENTE (localStorage)
+   ══════════════════════════════════════════ */
+function cargarEstados() {
+  try { return JSON.parse(localStorage.getItem('auditEstados') || '{}'); } catch(e) { return {}; }
+}
+function guardarEstado(id, campo, valor) {
+  const est = cargarEstados();
+  if (!est[id]) est[id] = {};
+  est[id][campo] = valor;
+  localStorage.setItem('auditEstados', JSON.stringify(est));
+}
+function cargarAsignaciones() {
+  try { return JSON.parse(localStorage.getItem('auditAsignaciones') || '{}'); } catch(e) { return {}; }
+}
+function guardarAsignacion(id, tipo, valor) {
+  const asi = cargarAsignaciones();
+  if (!asi[id]) asi[id] = {};
+  asi[id][tipo] = valor;
+  localStorage.setItem('auditAsignaciones', JSON.stringify(asi));
+}
+
+function getProximas() {
+  const estados = cargarEstados();
+  const asignaciones = cargarAsignaciones();
+  return PROXIMAS_BASE.map(p => {
+    const e = estados[p.id] || {};
+    const a = asignaciones[p.id] || {};
+    return {
+      ...p,
+      cong: { auditor: a.cong || p.cong.auditor },
+      mant: p.mant ? { auditor: a.mant || p.mant.auditor } : null,
+      estadoCong: e.cong || 'pendiente',
+      estadoMant: e.mant || 'pendiente',
+    };
+  });
+}
+
+/* ══════════════════════════════════════════
+   COLORES AVATAR
+   ══════════════════════════════════════════ */
+const AV_PAL = [
+  {bg:'#E8F0FF',fg:'#1A3A8F'},{bg:'#E1F5EE',fg:'#085041'},{bg:'#FFF0E0',fg:'#8F4A00'},
+  {bg:'#F0EDFE',fg:'#3C3489'},{bg:'#FAEAE7',fg:'#712B13'},{bg:'#FBE8F0',fg:'#72243E'},
+  {bg:'#EAF5DE',fg:'#27500A'},{bg:'#E6F5FB',fg:'#0C4A7C'},{bg:'#E1F5EE',fg:'#0F6E56'},
+  {bg:'#FAEEDA',fg:'#854F0B'},{bg:'#EEEDFE',fg:'#534AB7'},{bg:'#FAEAE7',fg:'#993C1D'},
+  {bg:'#F0EDE8',fg:'#444441'}
+];
+function avEl(name, size) {
+  const idx = AUDITORES.indexOf(name);
+  const c = AV_PAL[idx >= 0 ? idx % AV_PAL.length : 0];
+  const ini = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const fs = size <= 34 ? 11 : 13;
+  return `<div class="av" style="width:${size}px;height:${size}px;background:${c.bg};color:${c.fg};font-size:${fs}px;flex-shrink:0">${ini}</div>`;
+}
+
+function estadoBadge(estado) {
+  return estado === 'realizada'
+    ? '<span class="badge badge-done">Realizada</span>'
+    : '<span class="badge badge-pend">Pendiente</span>';
+}
+
+/* ══════════════════════════════════════════
+   RENDERS
+   ══════════════════════════════════════════ */
+function renderInicio() {
+  const proximas = getProximas();
+  const next = proximas[0];
+  const ultimas = [...HISTORIAL_CONG].filter(h=>!h.organizador).reverse().slice(0,2);
+  const realizadas = HISTORIAL_CONG.length;
+
+  document.getElementById('inicio').innerHTML = `
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Próxima</div>
+        <div class="metric-value">${next ? next.mes : '—'}</div>
+        <div class="metric-sub">${next ? next.year : ''}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Auditores</div>
+        <div class="metric-value">13</div>
+        <div class="metric-sub">En rotación</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Realizadas</div>
+        <div class="metric-value">${realizadas}</div>
+        <div class="metric-sub">Desde 2024</div>
+      </div>
+    </div>
+
+    <div class="next-hero">
+      <div class="card-title">Próxima auditoría — ${next ? next.mes+' '+next.year : '—'}</div>
+      <div style="font-size:12px;color:rgba(245,242,236,0.45);margin-bottom:10px">Cubre ${next ? next.cubre : ''}</div>
+      <div class="next-pair">
+        <div class="next-item">
+          <div class="next-item-label">Congregación</div>
+          <div class="next-item-name">${next ? next.cong.auditor : '—'}</div>
+          <div class="next-date" style="margin-top:6px">${next ? estadoBadge(next.estadoCong) : ''}</div>
+        </div>
+        ${next && next.tieneMant ? `
+        <div class="next-item">
+          <div class="next-item-label">Mantenimiento</div>
+          <div class="next-item-name">${next.mant.auditor}</div>
+          <div class="next-date" style="margin-top:6px">${estadoBadge(next.estadoMant)}</div>
+        </div>` : `
+        <div class="next-item" style="opacity:0.35">
+          <div class="next-item-label">Mantenimiento</div>
+          <div class="next-item-name" style="font-size:14px;font-family:'DM Sans',sans-serif">No toca</div>
+        </div>`}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Últimas de congregación</div>
+      ${ultimas.map(h=>`
+        <div class="hist-row">
+          ${avEl(h.auditor, 34)}
+          <div class="hist-info">
+            <div class="hist-name">${h.auditor}</div>
+            <div class="hist-date">${h.mes} ${h.year} · ${h.cubre}</div>
+          </div>
+          <span class="badge badge-done">Realizada</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function turnoBlock(t, esProxima) {
+  const estadoCong = t.estadoCong || 'realizada';
+  const estadoMant = t.estadoMant || 'realizada';
+
+  let congRow = `<div class="audit-row">
+    ${avEl(t.cong ? t.cong.auditor : (t.auditor||''), 34)}
+    <div class="audit-info">
+      <div class="audit-name">${t.cong ? t.cong.auditor : (t.auditor||'')}${t.organizador||t.cong?.organizador?' <span style="font-size:10px;color:var(--text3)">(organizador)</span>':''}</div>
+      <div class="audit-tipo">Auditoría de congregación</div>
+    </div>
+    <span class="badge badge-cong">Congregación</span>
+    ${esProxima ? estadoBadge(estadoCong) : '<span class="badge badge-done">Realizada</span>'}
+  </div>`;
+
+  let mantRow = '';
+  if (esProxima && t.tieneMant && t.mant) {
+    mantRow = `<div class="audit-row">
+      ${avEl(t.mant.auditor, 34)}
+      <div class="audit-info">
+        <div class="audit-name">${t.mant.auditor}</div>
+        <div class="audit-tipo">Auditoría de mantenimiento</div>
+      </div>
+      <span class="badge badge-mant">Mantenimiento</span>
+      ${estadoBadge(estadoMant)}
+    </div>`;
+  } else if (!esProxima) {
+    const mh = HISTORIAL_MANT.find(m=>m.mes===t.mes && m.year===t.year);
+    if (mh) {
+      mantRow = `<div class="audit-row">
+        ${avEl(mh.auditor, 34)}
+        <div class="audit-info">
+          <div class="audit-name">${mh.auditor}</div>
+          <div class="audit-tipo">Auditoría de mantenimiento</div>
+        </div>
+        <span class="badge badge-mant">Mantenimiento</span>
+        <span class="badge badge-done">Realizada</span>
+      </div>`;
+    }
+  }
+
+  const headBadge = esProxima
+    ? `<span class="badge badge-next">Próxima</span>`
+    : `<span class="badge badge-gray">Completada</span>`;
+
+  return `<div class="turno">
+    <div class="turno-head">
+      <div class="turno-head-left">
+        <div class="turno-mes">${t.mes} ${t.year}</div>
+        <div class="turno-cubre">Cubre ${t.cubre}</div>
+      </div>
+      ${headBadge}
+    </div>
+    <div class="turno-body">${congRow}${mantRow}</div>
+  </div>`;
+}
+
+function renderCalendario() {
+  const proximas = getProximas();
+  const histCombinado = HISTORIAL_CONG.map(h=>({...h, esProxima:false}));
+  const proxCombinado = proximas.map(p=>({...p, esProxima:true}));
+  const todas = [...histCombinado, ...proxCombinado];
+  const years = [...new Set(todas.map(t=>t.year))].sort();
+  let html = '';
+  for (const y of years) {
+    html += `<div class="year-sep">${y}</div>`;
+    todas.filter(t=>t.year===y).forEach(t=>{ html += turnoBlock(t, t.esProxima); });
+  }
+  document.getElementById('calendario').innerHTML = `<div style="padding-bottom:8px">${html}</div>`;
+}
+
+function renderHistorial() {
+  const pastCong = [...HISTORIAL_CONG].reverse();
+  document.getElementById('historial').innerHTML = `
+    <div class="card">
+      <div class="card-title">Congregación — ${HISTORIAL_CONG.length} realizadas</div>
+      ${pastCong.map(h=>`
+        <div class="hist-row">
+          ${avEl(h.auditor, 34)}
+          <div class="hist-info">
+            <div class="hist-name">${h.auditor}${h.organizador?' <span style="font-size:10px;color:var(--text3)">(organizador)</span>':''}</div>
+            <div class="hist-date">${h.mes} ${h.year} · ${h.cubre}</div>
+          </div>
+          <span class="badge badge-done">Realizada</span>
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">Mantenimiento — ${HISTORIAL_MANT.length} realizadas</div>
+      ${HISTORIAL_MANT.map(h=>`
+        <div class="hist-row">
+          ${avEl(h.auditor, 34)}
+          <div class="hist-info">
+            <div class="hist-name">${h.auditor}</div>
+            <div class="hist-date">${h.mes} ${h.year} · ${h.cubre}</div>
+          </div>
+          <span class="badge badge-done">Realizada</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderAdmin() {
+  const proximas = getProximas();
+  document.getElementById('admin').innerHTML = `
+    <div class="info-box">
+      <strong>Panel de administrador</strong><br>
+      Cambia el auditor asignado o marca el estado de cada auditoría. Los cambios se guardan automáticamente en este dispositivo.
+    </div>
+    ${proximas.map((t,i)=>`
+      <div class="admin-block">
+        <div class="admin-head">
+          ${t.mes} ${t.year}
+          <span class="admin-head-sub">· ${t.cubre}</span>
+          <span class="badge badge-next">Próxima</span>
+        </div>
+
+        <div class="admin-row">
+          <span class="badge badge-cong admin-label">Congregación</span>
+          ${avEl(t.cong.auditor, 30)}
+          <select class="sel-auditor" onchange="cambiarAuditor('${t.id}','cong',this.value)">
+            ${AUDITORES.map(a=>`<option value="${a}" ${a===t.cong.auditor?'selected':''}>${a}</option>`).join('')}
+          </select>
+          <select class="sel-estado" onchange="cambiarEstado('${t.id}','cong',this.value)">
+            <option value="pendiente" ${t.estadoCong==='pendiente'?'selected':''}>⏳ Pendiente</option>
+            <option value="realizada" ${t.estadoCong==='realizada'?'selected':''}>✓ Realizada</option>
+          </select>
+        </div>
+
+        ${t.tieneMant && t.mant ? `
+        <div class="admin-row">
+          <span class="badge badge-mant admin-label">Mantenimiento</span>
+          ${avEl(t.mant.auditor, 30)}
+          <select class="sel-auditor" onchange="cambiarAuditor('${t.id}','mant',this.value)">
+            ${AUDITORES.map(a=>`<option value="${a}" ${a===t.mant.auditor?'selected':''}>${a}</option>`).join('')}
+          </select>
+          <select class="sel-estado" onchange="cambiarEstado('${t.id}','mant',this.value)">
+            <option value="pendiente" ${t.estadoMant==='pendiente'?'selected':''}>⏳ Pendiente</option>
+            <option value="realizada" ${t.estadoMant==='realizada'?'selected':''}>✓ Realizada</option>
+          </select>
+        </div>` : `
+        <div class="admin-row" style="opacity:0.45;font-size:12px;color:var(--text3)">
+          <span class="badge badge-mant admin-label">Mantenimiento</span>
+          No toca este turno
+        </div>`}
+      </div>`).join('')}
+    <p style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.5">
+      Los cambios de estado y auditor se guardan en este dispositivo. Para añadir turnos futuros, edita <code>PROXIMAS_BASE</code> en el archivo HTML.
+    </p>`;
+}
+
+function cambiarAuditor(id, tipo, valor) {
+  guardarAsignacion(id, tipo, valor);
+  renderAdmin();
+  renderInicio();
+}
+
+function cambiarEstado(id, tipo, valor) {
+  guardarEstado(id, tipo, valor);
+  renderInicio();
+}
+
+function showTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.style.display='none');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(tab).style.display = 'block';
+  btn.classList.add('active');
+  if (tab==='inicio') renderInicio();
+  if (tab==='calendario') renderCalendario();
+  if (tab==='historial') renderHistorial();
+  if (tab==='admin') renderAdmin();
+}
+
+renderInicio();
+</script>
+</body>
+</html>
